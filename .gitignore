@@ -2,3 +2,6 @@
 .DS_Store
 1_POSIX_Threads/prodcons
 1_POSIX_Threads/prodcons
+3_POSIX_Signals_LINUX_Processes/producer.c
+3_POSIX_Signals_LINUX_Processes/main.c
+3_POSIX_Signals_LINUX_Processes/consumer.c
