@@ -5,3 +5,7 @@
 3_POSIX_Signals_LINUX_Processes/producer.c
 3_POSIX_Signals_LINUX_Processes/main.c
 3_POSIX_Signals_LINUX_Processes/consumer.c
+2_LINUX_Processes/producer
+2_LINUX_Processes/Makefile
+2_LINUX_Processes/consumer
+2_LINUX_Processes/main
