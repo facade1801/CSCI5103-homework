@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
         to zero, indicating that the segment is
         not being created here, it already exists
     */
-
+    //printf("%s\n",argv[1]);
     id = shmget(atoi(argv[1]), 0, 0);
     if (id == -1)
     {
@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     int size=ptr[2];
     if(argv[2]=="red")
     {
+        printf("Pro Red\n");
         while(ptr[0]<2000)
         {
             while(ptr[3]==0); //red mutex
@@ -62,8 +63,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    else if(argv[2]=="blue")
+    if(argv[2]=="blue")
     {
+        printf("Pro Blue\n");
         while(ptr[0]<2000)
         {
             while(ptr[4]==0);//blue mutex
@@ -80,8 +82,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    else
+    if(argv[2]=="white")
     {
+        printf("Pro white\n");
         while(ptr[0]<2000)
         {
             while(ptr[5]==0)//white mutex

@@ -55,8 +55,12 @@ int main(int argc, char *argv[])
     if(pid==0)//child process
     {
         white_id=pid;
-        //printf("now is white producer\n");
-        execl ("./producer", "producer",keystr,"white", NULL);
+        printf("now is white producer\n");
+        printf("white keystr %s\n",keystr);
+        if(execl("./producer", "producer",keystr,"white", NULL)==-1)
+        {
+            perror("execl failed for producer white");
+        }
     }
     else
     {
@@ -64,8 +68,12 @@ int main(int argc, char *argv[])
         if(pid1==0)
         {
             blue_id=pid1;
-            //printf("now is blue producer\n");
-            execl ("./producer", "producer",keystr,"blue", NULL);
+            printf("now is blue producer\n");
+            printf("blue keystr %s\n",keystr);
+            if(execl("./producer", "producer",keystr,"blue", NULL)==-1)
+            {
+                perror("execl failed for producer blue");
+            }
         }
         else
         {
@@ -73,17 +81,26 @@ int main(int argc, char *argv[])
             if(pid2==0)
             {
                 red_id=pid2;
-                //printf("now is red producer\n");
-                execl ("./producer", "producer",keystr,"red", NULL);
+                printf("now is red producer\n");
+                printf("red keystr %s\n",keystr);
+                if(execl("./producer", "producer",keystr,"red", NULL)==-1)
+                {
+                    perror("execl failed for producer red");
+                }
             }
             else
             {
                 consumer_id=pid2;
-                //printf("now is consumer\n");
-                execl ("./consumer", "consumer",keystr,NULL);
+                printf("now is consumer\n");
+                printf("consumer keystr %s\n",keystr);
+                if(execl("./consumer", "consumer",keystr,NULL)==-1)
+                {
+                    perror("execl failed for consumer");
+                }
             }
         }
     }
-    shmctl (shmem_id, IPC_RMID, NULL);
+    //while(shmem_ptr[0]!=100);
+    //shmctl (shmem_id, IPC_RMID, NULL);
     return 0;
 }

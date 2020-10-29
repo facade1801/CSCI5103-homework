@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         flag consisting of all 1s, and the NULL pointer means we don't care
         where in the address space the segment is attached
     */
-    ptr = shmat (id, (void *) NULL, 1023);
+    ptr = shmat (id, (void *) NULL,1023);
     if (ptr == (void *) -1)
     {
         perror ("consumer shmat failed");
@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     #endif
     while(ptr[1]>0||ptr[0]<=2000)
     {
+        printf("???\n");
         while(ptr[1]==0);
         ptr[1]--;
         ptr[0]++;
@@ -54,7 +55,11 @@ int main(int argc, char *argv[])
         head=(head-7+1)%ptr[2]+7;
         ptr[6]=head;
     }
-    shmdt ( (void *)  ptr);
+    //printf("Con\n");
+    //printf("%d\n",ptr[0],ptr[1],ptr)
+    //ptr[0]=100;
+    //shmdt ( (void *)  ptr);
+    shmctl (id, IPC_RMID, NULL);
     return 0;
 
 
