@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
     if(pid==0)//child process
     {
         white_id=pid;
-        printf("now is white producer\n");
-        printf("white keystr %s\n",keystr);
+        //printf("now is white producer\n");
+        //printf("white keystr %s\n",keystr);
         if(execl("./producer", "producer",keystr,"white", NULL)==-1)
         {
             perror("execl failed for producer white");
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
         if(pid1==0)
         {
             blue_id=pid1;
-            printf("now is blue producer\n");
-            printf("blue keystr %s\n",keystr);
+            //printf("now is blue producer\n");
+            //printf("blue keystr %s\n",keystr);
             if(execl("./producer", "producer",keystr,"blue", NULL)==-1)
             {
                 perror("execl failed for producer blue");
@@ -81,8 +81,8 @@ int main(int argc, char *argv[])
             if(pid2==0)
             {
                 red_id=pid2;
-                printf("now is red producer\n");
-                printf("red keystr %s\n",keystr);
+                //printf("now is red producer\n");
+                //printf("red keystr %s\n",keystr);
                 if(execl("./producer", "producer",keystr,"red", NULL)==-1)
                 {
                     perror("execl failed for producer red");
@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
             else
             {
                 consumer_id=pid2;
-                printf("now is consumer\n");
-                printf("consumer keystr %s\n",keystr);
+                //printf("now is consumer\n");
+                //printf("consumer keystr %s\n",keystr);
                 if(execl("./consumer", "consumer",keystr,NULL)==-1)
                 {
                     perror("execl failed for consumer");

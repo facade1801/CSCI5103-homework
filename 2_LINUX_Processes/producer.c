@@ -4,7 +4,7 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <string.h>
 #define DEBUG
 
 /* Child process executes this code */
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         exit (1);
     }
     #ifdef DEBUG
-    printf ("producer Got shmem id = %d\n", id);
+    //printf ("producer Got shmem id = %d\n", id);
     #endif
 
     /* Now attach this segment into the address space. Again, the 1023 is a
@@ -41,12 +41,12 @@ int main(int argc, char *argv[])
         exit (2);
     }
     #ifdef DEBUG
-    printf ("producer Got ptr = %p\n", ptr);
+    //printf ("producer Got ptr = %p\n", ptr);
     #endif
     int size=ptr[2];
-    if(argv[2]=="red")
+    if(strcmp(argv[2],"red")==0)
     {
-        printf("Pro Red\n");
+        //printf("Pro Red\n");
         while(ptr[0]<2000)
         {
             while(ptr[3]==0); //red mutex
@@ -63,9 +63,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    if(argv[2]=="blue")
+    else if(strcmp(argv[2],"blue")==0)
     {
-        printf("Pro Blue\n");
+        //printf("Pro Blue\n");
         while(ptr[0]<2000)
         {
             while(ptr[4]==0);//blue mutex
@@ -82,12 +82,12 @@ int main(int argc, char *argv[])
             }
         }
     }
-    if(argv[2]=="white")
+    else if(strcmp(argv[2],"white")==0)
     {
-        printf("Pro white\n");
+        //printf("Pro white\n");
         while(ptr[0]<2000)
         {
-            while(ptr[5]==0)//white mutex
+            while(ptr[5]==0);//white mutex
             ptr[5]--;
             if(ptr[0]<2000)
             {
