@@ -47,57 +47,72 @@ int main(int argc, char *argv[])
     if(strcmp(argv[2],"red")==0)
     {
         //printf("Pro Red\n");
-        while(ptr[0]<2000)
+        while(ptr[0]<20)
         {
-            while(ptr[3]==0); //red mutex
-            ptr[3]--;
-            if(ptr[0]<2000)
+            while(ptr[4]==0); //red mutex
+            ptr[4]--;
+            while(ptr[1]==ptr[2]);
+            if(ptr[0]<20)
             {
-                int tail = ptr[7];
+                while(ptr[3]==0);
+                ptr[3]--;
+                int tail = ptr[8];
                 ptr[tail]=0;
-                tail=(tail+1-7)%size+7;
-                ptr[7]=tail;
+                tail=(tail+1-9)%size+9;
+                ptr[8]=tail;
                 ptr[0]++;
-                ptr[4]=1;
+                ptr[1]++;
+                ptr[5]=1;
                 printf("now produce red product\n");
+                ptr[3]++;
             }
         }
     }
     else if(strcmp(argv[2],"blue")==0)
     {
         //printf("Pro Blue\n");
-        while(ptr[0]<2000)
+        while(ptr[0]<20)
         {
-            while(ptr[4]==0);//blue mutex
-            ptr[4]--;
-            if(ptr[0]<2000)
+            while(ptr[5]==0);//blue mutex
+            ptr[5]--;
+            while(ptr[1]==ptr[2]);
+            if(ptr[0]<20)
             {
-                int tail = ptr[7];
+                while(ptr[3]==0);
+                ptr[3]--;
+                int tail = ptr[8];
                 ptr[tail]=1;
-                tail=(tail+1-7)%size+7;
-                ptr[7]=tail;
+                tail=(tail+1-9)%size+9;
+                ptr[8]=tail;
                 ptr[0]++;
-                ptr[5]=1;
+                ptr[1]++;
+                ptr[6]=1;
                 printf("now produce blue product\n");
+                ptr[3]++;
             }
         }
     }
     else if(strcmp(argv[2],"white")==0)
     {
         //printf("Pro white\n");
-        while(ptr[0]<2000)
+        while(ptr[0]<20)
         {
-            while(ptr[5]==0);//white mutex
-            ptr[5]--;
-            if(ptr[0]<2000)
+            while(ptr[6]==0);//white mutex
+            ptr[6]--;
+            while(ptr[1]==ptr[2]);
+            if(ptr[0]<20)
             {
-                int tail = ptr[7];
+                while(ptr[3]==0);
+                ptr[3]--;
+                int tail = ptr[8];
                 ptr[tail]=2;
-                tail=(tail+1-7)%size+7;
-                ptr[7]=tail;
+                tail=(tail+1-9)%size+9;
+                ptr[8]=tail;
                 ptr[0]++;
-                ptr[3]=1;
+                ptr[1]++;
+                ptr[4]=1;
                 printf("now produce white product\n");
+                ptr[3]++;
             }
         }
     }

@@ -43,17 +43,24 @@ int main(int argc, char *argv[])
     #ifdef DEBUG
     //printf ("consumer Got ptr = %p\n", ptr);
     #endif
-    while(ptr[1]>0||ptr[0]<=2000)
+    while(ptr[1]>0||ptr[0]<=20)
     {
-        printf("???\n");
+        //printf("???\n");
         while(ptr[1]==0);
+        while(ptr[3]==0);
+        ptr[3]--;
         ptr[1]--;
-        ptr[0]++;
-        int head=ptr[6];
+        int head=ptr[7];
         int color=ptr[head];
-        printf("remove item %d\n",color);
-        head=(head-7+1)%ptr[2]+7;
-        ptr[6]=head;
+        if(color==0)
+        printf("remove item red\n");
+        else if(color==1)
+        printf("remove item blue\n");
+        else
+        printf("remove item white\n");
+        head=(head-9+1)%ptr[2]+9;
+        ptr[7]=head;
+        ptr[3]++;
     }
     //printf("Con\n");
     //printf("%d\n",ptr[0],ptr[1],ptr)
