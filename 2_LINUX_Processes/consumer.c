@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
         exit (1);
     }
     #ifdef DEBUG
-    printf ("consumer Got shmem id = %d\n", id);
+    //printf ("consumer Got shmem id = %d\n", id);
     #endif
 
     /* Now attach this segment into the address space. Again, the 1023 is a
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         exit (2);
     }
     #ifdef DEBUG
-    printf ("consumer Got ptr = %p\n", ptr);
+    //printf ("consumer Got ptr = %p\n", ptr);
     #endif
     while(ptr[1]>0||ptr[0]<=2000)
     {
@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
     //shmdt ( (void *)  ptr);
     shmctl (id, IPC_RMID, NULL);
     return 0;
-
 
 
     /* Now check the 50th integer in the shared memory space. The parent
