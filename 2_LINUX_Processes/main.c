@@ -42,11 +42,12 @@ int main(int argc, char *argv[])
     shmem_ptr[0]=0; //set the total sum of products producer produce
     shmem_ptr[1]=0; //set the count of product
     shmem_ptr[2]=(atoi(argv[1]));//store the buffer size N into ptr[2]
-    shmem_ptr[3]=1; //red product mutex
-    shmem_ptr[4]=0; //blue product mutex
-    shmem_ptr[5]=0; //white product mutex
-    shmem_ptr[6]=0; //store the position of head
-    shmem_ptr[7]=0; //store the position of tail
+    shmem_ptr[3]=1; //semaphore
+    shmem_ptr[4]=1; //red product mutex
+    shmem_ptr[5]=0; //blue product mutex
+    shmem_ptr[6]=0; //white product mutex
+    shmem_ptr[7]=9; //store the position of head
+    shmem_ptr[8]=9; //store the position of tail
 
     int red_id,blue_id,white_id,consumer_id;
     int pid=fork();
