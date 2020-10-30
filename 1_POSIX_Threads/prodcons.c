@@ -169,9 +169,9 @@ int main( int argc, char* argv[] )
     
     // thread variables
     pthread_t prod1, prod2, prod3, cons;
-    pthread_mutex_init( &lock, NULL);
-    pthread_cond_init( &SpaceAvailable, NULL);
-    pthread_cond_init( &ItemAvailable, NULL);
+    pthread_mutex_init( &lock, PTHREAD_PROCESS_SHARED);
+    pthread_cond_init( &SpaceAvailable, PTHREAD_PROCESS_SHARED);
+    pthread_cond_init( &ItemAvailable, PTHREAD_PROCESS_SHARED);
     
     // Create 3 producer threads
     int n;
