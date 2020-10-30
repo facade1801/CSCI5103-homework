@@ -1,3 +1,9 @@
+// Using 1 Grace Day
+
+// Ce Yao, yao00136@umn.edu
+// Jia Zhang, zhan7164@umn.edu
+
+
 #include<pthread.h>
 #include<stdio.h>
 #include<string.h>
@@ -34,7 +40,7 @@ void * producer (int _color)
         case 2: strcpy(colorName, "white"); strcpy(logName, "producer_white.log"); break;
         default: break;
     }
-    printf("%s%s", colorName,logName);
+    // printf("%s%s", colorName,logName);
     FILE *fp = fopen(logName, "w+");
     
     int i;
