@@ -45,9 +45,9 @@ int main(int argc, char *argv[])
     {
         while(ptr[1]==0);//the buffer is empty
         while(ptr[3]==0);//producer process is running
-        consume_total++;
-        ptr[3]--;
+        ptr[3]=0;
         ptr[1]--;
+        consume_total++;
         long long head=ptr[7];//get the position of head pointer
         struct timeval currentTime;
         gettimeofday(&currentTime, NULL);
@@ -72,8 +72,9 @@ int main(int argc, char *argv[])
         }
         head=(head-10+1)%ptr[2]+10;//update head position
         ptr[7]=head;
-        ptr[3]++;
+        ptr[3]=1;
     }
+    printf("%d\n",consume_total);
     while(ptr[9]!=3);//producer process is still running
     shmctl (id, IPC_RMID, NULL);
     fclose(fp1);

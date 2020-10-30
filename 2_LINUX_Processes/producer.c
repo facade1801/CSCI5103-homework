@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
             ptr[4]--;
             while(ptr[1]==ptr[2]);//ptr[1] store the product number, equal means buffer is full
             while(ptr[3]==0); //semaphore
-            ptr[3]--; //set red semaphore = 0
+            ptr[3]=0; //set red semaphore = 0
             long long tail = ptr[8];//get the tail pointer position
             struct timeval currentTime;
             gettimeofday(&currentTime, NULL);
@@ -59,13 +59,14 @@ int main(int argc, char *argv[])
             ptr[8]=tail;//update the tail position
             ptr[0]++; //total number of product plus 1
             ptr[1]++; //number of product in the buffer plus 1
-            ptr[5]=1; //set bule semaphore = 1
             red_total++;
             fprintf(fp1, "red %lld\n", llTime);//write information into file
             fflush(fp1);
-            ptr[3]++;//set the semaphore = 1
+            ptr[5]=1; //set blue semaphore = 1
+            ptr[3]=1;//set the semaphore = 1
         }
         fclose(fp1);
+        printf("%d\n",red_total);
     }
     else if(strcmp(argv[2],"blue")==0)//go into blue producer process
     {
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
             ptr[5]--;
             while(ptr[1]==ptr[2]);
             while(ptr[3]==0);
-            ptr[3]--;
+            ptr[3]=0;
             long long tail = ptr[8];
             struct timeval currentTime;
             gettimeofday(&currentTime, NULL);
@@ -85,13 +86,14 @@ int main(int argc, char *argv[])
             ptr[8]=tail;
             ptr[0]++;
             ptr[1]++;
-            ptr[6]=1;
             blue_total++;
             fprintf(fp2, "blue %lld\n", llTime);
             fflush(fp2);
-            ptr[3]++;
+            ptr[6]=1;
+            ptr[3]=1;
         }
         fclose(fp2);
+        printf("%d\n",blue_total);
     }
     else//go into white producer process
     {
@@ -101,7 +103,7 @@ int main(int argc, char *argv[])
             ptr[6]--;
             while(ptr[1]==ptr[2]);
             while(ptr[3]==0);
-            ptr[3]--;
+            ptr[3]=0;
             long long tail = ptr[8];
             struct timeval currentTime;
             gettimeofday(&currentTime, NULL);
@@ -111,13 +113,14 @@ int main(int argc, char *argv[])
             ptr[8]=tail;
             ptr[0]++;
             ptr[1]++;
-            ptr[4]=1;
             white_total++;
             fprintf(fp3, "white %lld\n", llTime);
             fflush(fp3);
-            ptr[3]++;
+            ptr[4]=1;
+            ptr[3]=1;
         }
         fclose(fp3);
+        printf("%d\n",white_total);
     }
     ptr[9]++; //add the number in the ptr[9], if it equals 3, this means
                 //all the producer process are finished
