@@ -22,6 +22,7 @@ pthread_cond_t  SpaceAvailable, ItemAvailable;
 
 // color: red(0), blue(1), white(2)
 
+// Return current time function
 void returnTime(char* strTime) {
     struct timeval currentTime;
     gettimeofday(&currentTime, NULL);
@@ -32,6 +33,7 @@ void returnTime(char* strTime) {
 void * producer (int _color)
 {
     int color = _color;
+    // Set color string and log string according to color
     char colorName[6];
     char logName[30];
     switch (color) {
@@ -40,7 +42,7 @@ void * producer (int _color)
         case 2: strcpy(colorName, "white"); strcpy(logName, "producer_white.log"); break;
         default: break;
     }
-    // printf("%s%s", colorName,logName);
+    // Open log file to write later
     FILE *fp = fopen(logName, "w+");
     
     int i;
@@ -67,9 +69,8 @@ void * producer (int _color)
             // Increment the count of items in the buffer
             count ++;
             currentColor = (color + 1) % 3;
-//            printf("Deposited %dth item (color:%s(%i)), next producer is %i, after deposit count is %i\n", i, colorName, color, currentColor, count);
         }
-        
+        // leave critical section
         pthread_mutex_unlock ( &lock );
         // Wakeup consumer, if waiting
         pthread_cond_signal ( &ItemAvailable );
@@ -89,6 +90,7 @@ void * producer (int _color)
         // Wakeup consumer, if waiting
         pthread_cond_signal( &ItemAvailable );
     }
+    // close file pointer
     fclose(fp);
     return NULL;
 }
@@ -100,6 +102,7 @@ void * consumer (void *arg)
     FILE *fp1 = fopen("consumer_blue.log", "w+");
     FILE *fp2 = fopen("consumer_white.log", "w+");
 
+    // Receive items until get -1 from producer_white
     do {
         // Enter critical section
         pthread_mutex_lock ( &lock);
@@ -119,11 +122,12 @@ void * consumer (void *arg)
             out = (out + 1) % bufferSize;
             // Decrement the count of items in the buffer
             count--;
+            // Log to corresponding log file
             switch (i[0]) {
                 case 'r': fprintf(fp0, "%s\n", i); break;
                 case 'b': fprintf(fp1, "%s\n", i); break;
                 case 'w': fprintf(fp2, "%s\n", i); break;
-                default:  printf("wrong"); break;
+                default: break;
             }
         }
         // exit critical section
@@ -132,6 +136,7 @@ void * consumer (void *arg)
         pthread_cond_signal( &SpaceAvailable );
     } while (i[0] != '-');
     
+    // close file pointers
     fclose(fp0);
     fclose(fp1);
     fclose(fp2);
