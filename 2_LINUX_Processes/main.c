@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     key_t key;          /* A key to access shared memory segments */
     int size;           /* Memory size needed, in bytes */
     int flag;           /* Controls things like r/w permissions */
-    key = 4455;         /* Some arbitrary integer, which will also be
+    key = 8000;         /* Some arbitrary integer, which will also be
                             passed to the other processes which need to
                             share memory */
     size = 20480;        /* Assume we need 2Kb of memory, which means we
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    //while(shmem_ptr[0]!=100);
-    //shmctl (shmem_id, IPC_RMID, NULL);
+    while(shmem_ptr[0]<20||shmem_ptr[1]>0);
+    shmctl (shmem_id, IPC_RMID, NULL);
     return 0;
 }

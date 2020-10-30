@@ -43,11 +43,13 @@ int main(int argc, char *argv[])
     #ifdef DEBUG
     //printf ("consumer Got ptr = %p\n", ptr);
     #endif
-    while(ptr[1]>0||ptr[0]<=20)
+    int consume_total=0;
+    while(consume_total<20)
     {
-        //printf("???\n");
         while(ptr[1]==0);
         while(ptr[3]==0);
+        consume_total++;
+        //printf("%d\n",consume_total);
         ptr[3]--;
         ptr[1]--;
         int head=ptr[7];
@@ -65,8 +67,9 @@ int main(int argc, char *argv[])
     //printf("Con\n");
     //printf("%d\n",ptr[0],ptr[1],ptr)
     //ptr[0]=100;
-    //shmdt ( (void *)  ptr);
-    shmctl (id, IPC_RMID, NULL);
+    shmdt ( (void *)  ptr);
+    printf("consumerrrrrrrrr\n");
+    //shmctl (id, IPC_RMID, NULL);
     return 0;
 
 
