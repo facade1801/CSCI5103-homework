@@ -4,7 +4,7 @@
 #include <sys/shm.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <sys/time.h>
 #define DEBUG
 
 /* Child process executes this code */
@@ -12,7 +12,7 @@
 int main(int argc, char *argv[])
 {
     int id;         /* shared memory identifier */
-    int *ptr;       /* pointer to shared memory */
+    long long *ptr;       /* pointer to shared memory */
     /* A key for the shared memory segment has been passed to this program
         as its first parameter. We use it to get the segment id of the
         segment that the parent process created. The size parameter is set
@@ -43,46 +43,49 @@ int main(int argc, char *argv[])
     #ifdef DEBUG
     //printf ("consumer Got ptr = %p\n", ptr);
     #endif
+    FILE *fp1 = fopen("consumer_red.log", "w+");
+    FILE *fp2 = fopen("consumer_blue.log", "w+");
+    FILE *fp3 = fopen("consumer_white.log", "w+");
     int consume_total=0;
+    int current_color=1;
     while(consume_total<20)
     {
         while(ptr[1]==0);
         while(ptr[3]==0);
         consume_total++;
-        //printf("%d\n",consume_total);
         ptr[3]--;
         ptr[1]--;
-        int head=ptr[7];
-        int color=ptr[head];
-        if(color==0)
-        printf("remove item red\n");
-        else if(color==1)
-        printf("remove item blue\n");
+        long long head=ptr[7];
+        struct timeval currentTime;
+        gettimeofday(&currentTime, NULL);
+        long long llTime = currentTime.tv_sec*1000000 + currentTime.tv_usec;
+        if(current_color==1)
+        {
+            fprintf(fp1, "red %lld %lld\n", ptr[head],llTime);
+            fflush(fp1);
+            current_color++;
+        }
+        else if(current_color==2)
+        {
+            fprintf(fp2, "blue %lld %lld\n", ptr[head],llTime);
+            fflush(fp2);
+            current_color++;
+        }
         else
-        printf("remove item white\n");
+        {
+            fprintf(fp3, "white %lld %lld\n", ptr[head],llTime);
+            fflush(fp3);
+            current_color=1;
+        }
         head=(head-10+1)%ptr[2]+10;
         ptr[7]=head;
         ptr[3]++;
     }
-    //printf("Con\n");
-    //printf("%d\n",ptr[0],ptr[1],ptr)
-    //ptr[0]=100;
-    printf("consumer exit\n");
-    //if(ptr[9]<3)
-    //{
-        //ptr[9]++;
-        //printf("%d %d\n",ptr[9]-1,ptr[9]);
-        //if(shmdt ( (void *)  ptr)==-1)
-        //perror("wrong shmdt consumer");
-    //}
-    //else
-    //{
-        //printf("%d  end\n",ptr[9]+1);
-        while(ptr[9]!=3);
-        shmctl (id, IPC_RMID, NULL);
-    //}
-
-    //shmctl (id, IPC_RMID, NULL);
+    while(ptr[9]!=3);
+    shmctl (id, IPC_RMID, NULL);
+    fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
     return 0;
 
 

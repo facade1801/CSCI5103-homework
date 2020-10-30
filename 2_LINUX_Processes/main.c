@@ -8,25 +8,16 @@
 
 #define DEBUG
 
-/* Simple example of shared memory usage */
-/* Make sure your current working directory is the one these files are in */
-/* Then execute `parent' from this directory */
-
 int main(int argc, char *argv[])
 {
     int shmem_id;       /* shared memory identifier */
-    int *shmem_ptr;     /* pointer to shared segment */
+    long long *shmem_ptr;     /* pointer to shared segment */
     key_t key;          /* A key to access shared memory segments */
     int size;           /* Memory size needed, in bytes */
     int flag;           /* Controls things like r/w permissions */
-    key = 6;         /* Some arbitrary integer, which will also be
-                            passed to the other processes which need to
-                            share memory */
-    size = 20480;        /* Assume we need 2Kb of memory, which means we
-                            can store 512 integers or floats */
-    flag = 1023;        /* 1023 = 111111111 in binary, i.e. all permissions
-                            and modes are set. This may not be appropriate
-                            for all programs! */
+    key = 6;
+    size = 20480;
+    flag = 1023;
     shmem_id = shmget (key, size, flag);
     if (shmem_id == -1)
     {
@@ -39,26 +30,23 @@ int main(int argc, char *argv[])
         perror ("shmat failed");
         exit (2);
     }
-    shmem_ptr[0]=0; //set the total sum of products producer produce
-    shmem_ptr[1]=0; //set the count of product
-    shmem_ptr[2]=(atoi(argv[1]));//store the buffer size N into ptr[2]
+    //the following I allocate 9 position of shared memory to store different information
+    shmem_ptr[0]=0; //store the total number of products producer produces
+    shmem_ptr[1]=0; //store the number of products in the buffer
+    shmem_ptr[2]=(atoi(argv[1]));//store the buffer size N, which will get from user
     shmem_ptr[3]=1; //semaphore
-    shmem_ptr[4]=1; //red product mutex
-    shmem_ptr[5]=0; //blue product mutex
-    shmem_ptr[6]=0; //white product mutex
+    shmem_ptr[4]=1; //red product semaphore
+    shmem_ptr[5]=0; //blue product semaphore
+    shmem_ptr[6]=0; //white product semaphore
     shmem_ptr[7]=10; //store the position of head
     shmem_ptr[8]=10; //store the position of tail
-    shmem_ptr[9]=0;
+    shmem_ptr[9]=0; //use this value to see if three consumer process are done
 
-    int red_id,blue_id,white_id,consumer_id;
     int pid=fork();
     char keystr[10];
     sprintf (keystr, "%d", key);
-    if(pid==0)//child process
+    if(pid==0)//white producer process
     {
-        white_id=pid;
-        //printf("now is white producer\n");
-        //printf("white keystr %s\n",keystr);
         if(execl("./producer", "producer",keystr,"white", NULL)==-1)
         {
             perror("execl failed for producer white");
@@ -67,11 +55,8 @@ int main(int argc, char *argv[])
     else
     {
         int pid1=fork();
-        if(pid1==0)
+        if(pid1==0) //blue producer process
         {
-            blue_id=pid1;
-            //printf("now is blue producer\n");
-            //printf("blue keystr %s\n",keystr);
             if(execl("./producer", "producer",keystr,"blue", NULL)==-1)
             {
                 perror("execl failed for producer blue");
@@ -80,21 +65,15 @@ int main(int argc, char *argv[])
         else
         {
             int pid2=fork();
-            if(pid2==0)
+            if(pid2==0) //red producer process
             {
-                red_id=pid2;
-                //printf("now is red producer\n");
-                //printf("red keystr %s\n",keystr);
                 if(execl("./producer", "producer",keystr,"red", NULL)==-1)
                 {
                     perror("execl failed for producer red");
                 }
             }
-            else
+            else //consumer process
             {
-                consumer_id=pid2;
-                //printf("now is consumer\n");
-                //printf("consumer keystr %s\n",keystr);
                 if(execl("./consumer", "consumer",keystr,NULL)==-1)
                 {
                     perror("execl failed for consumer");
