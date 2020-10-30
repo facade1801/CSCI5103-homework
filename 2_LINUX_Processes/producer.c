@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
         //printf("Pro Red\n");
         while(ptr[0]<20)
         {
+            //printf("Pro Red\n");
             while(ptr[4]==0); //red mutex
             ptr[4]--;
             while(ptr[1]==ptr[2]);
@@ -73,6 +74,7 @@ int main(int argc, char *argv[])
         //printf("Pro Blue\n");
         while(ptr[0]<20)
         {
+            //printf("Pro Blue\n");
             while(ptr[5]==0);//blue mutex
             ptr[5]--;
             while(ptr[1]==ptr[2]);
@@ -97,6 +99,7 @@ int main(int argc, char *argv[])
         //printf("Pro white\n");
         while(ptr[0]<20)
         {
+            //printf("Pro white\n");
             while(ptr[6]==0);//white mutex
             ptr[6]--;
             while(ptr[1]==ptr[2]);
@@ -117,5 +120,6 @@ int main(int argc, char *argv[])
         }
     }
     shmdt ( (void *)  ptr);
+    printf("producerrrrrrrrr %s\n",argv[2]);
     return 0;
 }
