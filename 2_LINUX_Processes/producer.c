@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
                 ptr[3]--;
                 int tail = ptr[8];
                 ptr[tail]=0;
-                tail=(tail+1-9)%size+9;
+                tail=(tail+1-10)%size+10;
                 ptr[8]=tail;
                 ptr[0]++;
                 ptr[1]++;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
                 ptr[3]--;
                 int tail = ptr[8];
                 ptr[tail]=1;
-                tail=(tail+1-9)%size+9;
+                tail=(tail+1-10)%size+10;
                 ptr[8]=tail;
                 ptr[0]++;
                 ptr[1]++;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
                 ptr[3]--;
                 int tail = ptr[8];
                 ptr[tail]=2;
-                tail=(tail+1-9)%size+9;
+                tail=(tail+1-10)%size+10;
                 ptr[8]=tail;
                 ptr[0]++;
                 ptr[1]++;
@@ -119,7 +119,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    shmdt ( (void *)  ptr);
-    printf("producerrrrrrrrr %s\n",argv[2]);
+    printf("producer %s exit\n",argv[2]);
+    ptr[9]++;
+    if(shmdt ( (void *)  ptr)==-1)
+    perror("wrong shmdt");
     return 0;
 }

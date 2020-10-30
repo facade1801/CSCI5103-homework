@@ -60,15 +60,17 @@ int main(int argc, char *argv[])
         printf("remove item blue\n");
         else
         printf("remove item white\n");
-        head=(head-9+1)%ptr[2]+9;
+        head=(head-10+1)%ptr[2]+10;
         ptr[7]=head;
         ptr[3]++;
     }
     //printf("Con\n");
     //printf("%d\n",ptr[0],ptr[1],ptr)
     //ptr[0]=100;
-    shmdt ( (void *)  ptr);
-    printf("consumerrrrrrrrr\n");
+    printf("consumer exit\n");
+    ptr[9]++;
+    if(shmdt ( (void *)  ptr)==-1)
+    perror("wrong shmdt consumer");
     //shmctl (id, IPC_RMID, NULL);
     return 0;
 

@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     key_t key;          /* A key to access shared memory segments */
     int size;           /* Memory size needed, in bytes */
     int flag;           /* Controls things like r/w permissions */
-    key = 8000;         /* Some arbitrary integer, which will also be
+    key = 6;         /* Some arbitrary integer, which will also be
                             passed to the other processes which need to
                             share memory */
     size = 20480;        /* Assume we need 2Kb of memory, which means we
@@ -46,8 +46,9 @@ int main(int argc, char *argv[])
     shmem_ptr[4]=1; //red product mutex
     shmem_ptr[5]=0; //blue product mutex
     shmem_ptr[6]=0; //white product mutex
-    shmem_ptr[7]=9; //store the position of head
-    shmem_ptr[8]=9; //store the position of tail
+    shmem_ptr[7]=10; //store the position of head
+    shmem_ptr[8]=10; //store the position of tail
+    shmem_ptr[9]=0;
 
     int red_id,blue_id,white_id,consumer_id;
     int pid=fork();
@@ -101,7 +102,9 @@ int main(int argc, char *argv[])
             }
         }
     }
-    while(shmem_ptr[0]<20||shmem_ptr[1]>0);
-    shmctl (shmem_id, IPC_RMID, NULL);
+    while(shmem_ptr[9]<3);
+    sleep(20);
+    if(shmctl (shmem_id, IPC_RMID, NULL)==-1)
+    perror("wrong shmctl");
     return 0;
 }
