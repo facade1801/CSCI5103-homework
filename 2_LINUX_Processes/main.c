@@ -102,9 +102,5 @@ int main(int argc, char *argv[])
             }
         }
     }
-    while(shmem_ptr[9]<3);
-    sleep(20);
-    if(shmctl (shmem_id, IPC_RMID, NULL)==-1)
-    perror("wrong shmctl");
     return 0;
 }

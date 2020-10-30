@@ -68,9 +68,19 @@ int main(int argc, char *argv[])
     //printf("%d\n",ptr[0],ptr[1],ptr)
     //ptr[0]=100;
     printf("consumer exit\n");
-    ptr[9]++;
-    if(shmdt ( (void *)  ptr)==-1)
-    perror("wrong shmdt consumer");
+    //if(ptr[9]<3)
+    //{
+        //ptr[9]++;
+        //printf("%d %d\n",ptr[9]-1,ptr[9]);
+        //if(shmdt ( (void *)  ptr)==-1)
+        //perror("wrong shmdt consumer");
+    //}
+    //else
+    //{
+        //printf("%d  end\n",ptr[9]+1);
+        shmctl (id, IPC_RMID, NULL);
+    //}
+
     //shmctl (id, IPC_RMID, NULL);
     return 0;
 
