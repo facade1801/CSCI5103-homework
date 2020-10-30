@@ -1,3 +1,6 @@
+// Using 1 Grace Day
+// Ce Yao, yao00136@umn.edu
+// Jia Zhang, zhan7164@umn.edu
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -16,7 +19,7 @@ int main(int argc, char *argv[])
     int size;           /* Memory size needed, in bytes */
     int flag;           /* Controls things like r/w permissions */
     key = 6;
-    size = 20480;
+    size = 390400;
     flag = 1023;
     shmem_id = shmget (key, size, flag);
     if (shmem_id == -1)
@@ -47,7 +50,7 @@ int main(int argc, char *argv[])
     sprintf (keystr, "%d", key);
     if(pid==0)//white producer process
     {
-        if(execl("./producer", "producer",keystr,"white", NULL)==-1)
+        if(execl("./producer", "producer",keystr,"white", NULL)==-1)//pass key value and "white"
         {
             perror("execl failed for producer white");
         }
@@ -57,7 +60,7 @@ int main(int argc, char *argv[])
         int pid1=fork();
         if(pid1==0) //blue producer process
         {
-            if(execl("./producer", "producer",keystr,"blue", NULL)==-1)
+            if(execl("./producer", "producer",keystr,"blue", NULL)==-1)//pass key value and "blue"
             {
                 perror("execl failed for producer blue");
             }
@@ -67,14 +70,14 @@ int main(int argc, char *argv[])
             int pid2=fork();
             if(pid2==0) //red producer process
             {
-                if(execl("./producer", "producer",keystr,"red", NULL)==-1)
+                if(execl("./producer", "producer",keystr,"red", NULL)==-1)//pass key value and "red"
                 {
                     perror("execl failed for producer red");
                 }
             }
             else //consumer process
             {
-                if(execl("./consumer", "consumer",keystr,NULL)==-1)
+                if(execl("./consumer", "consumer",keystr,NULL)==-1)//pass key value
                 {
                     perror("execl failed for consumer");
                 }
