@@ -94,13 +94,14 @@ int main(int argc, char *argv[])
                 ptr[0]++;
                 ptr[1]++;
                 ptr[6]=1;
-                blue_total=1;
+                blue_total++;
                 printf("now produce blue product\n");
                 ptr[3]++;
             //}
         }
+        //printf("?????????????blue number %d\n",blue_total);
     }
-    else if(strcmp(argv[2],"white")==0)
+    else //if(strcmp(argv[2],"white")==0)
     {
         //printf("Pro white\n");
         while(white_total<6)
@@ -132,6 +133,7 @@ int main(int argc, char *argv[])
     //{
         //ptr[9]++;
         //printf("%s %d %d\n",argv[2],ptr[9]-1,ptr[9]);
+        ptr[9]++;
         if(shmdt ( (void *)  ptr)==-1)
         perror("wrong shmdt");
     //}

@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     //else
     //{
         //printf("%d  end\n",ptr[9]+1);
+        while(ptr[9]!=3);
         shmctl (id, IPC_RMID, NULL);
     //}
 
