@@ -1,0 +1,76 @@
+
+Compilation Instructions:
+-----------------------
+
+Just run "make" to create the scullbuffer.ko and the producer/consumer programs.
+
+Running Instructions:
+-----------------------
+1. Make sure that the device is unloaded or the device with same name doesn't
+   exist. Type "sudo ./scull_unload".
+
+2. Load the scull buffer using command "sudo ./scull_load". This will create
+   a device called /dev/scullbuffer.
+
+3. In case the number of items have to be specified by the user then type 
+   "sudo ./scull_load NITEMS=<nitems>"
+
+4. Type make command to compile all relevant files.
+
+-----------------------------------------------------
+Turning on/off PDEBUG for printing to kernel log 
+-----------------------------------------------------
+
+For debugging, printk is used to write to the kernel log file.
+You can always use printk statement to print to the kernel log,
+If you are happy using printk, you may ignore the PDEBUG macro described below.
+
+
+However, you can enable/disable writing to kernel log when using PDEBUG macro defined in scullbuffer.h
+With PDEBUG, you can use the same formatting commands as in printk or printf.
+
+In the Makefile, you an turn ON  writing to kernel log using PDEBUG
+by uncommenting DEBUG variable on the second line
+
+For example:
+  DEBUG = y
+
+To turn OFF writing PDEBUG messages to kernel log file, simply comment it.
+
+For example:
+# DEBUG = y
+
+In the Makefile included here, this flag is turned off.
+
+You can see the kernel log file by typing "dmesg" command.
+
+---------------------------------------------------
+
+Testprograms producer.cs and consumer.c
+--------------------------------------------------
+
+producer.c will deposit up to some specified number of items of 32 bytes
+each in the buffer.
+
+Each item is  string up to 32 bytes. It contains the strin  specified  
+in ithe second argument to the program with  a sequentially increasing 
+counter value appended to it.
+
+   Example:
+      producer 50 BLACK
+   will produe and deposit up to 50 items such as BLACK01, BLACK02 etc.
+
+   The producer process logs these items in a file Prod_BLACK.log
+
+The consumer process removes 32-byte itmes from the buffer. I will be 
+remove up the specified number of items, each of 32-byte, and writes them  
+to a log file:
+  
+   Example:
+      consumer 50 WHITE
+   will remoe up to 50 items. It will write then to Cons_WHITE.log file.
+
+Both these programs have several printf statement to help in understanding
+the events happening in the system. You an comment them out, if you want
+to suppress any output on your console.
+------------------------------------------------------
