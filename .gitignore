@@ -1,9 +1,7 @@
-
 .DS_Store
 *.log
+*.cmd
+*.o
+*.ko
 
-1_POSIX_Threads/prodcons
 
-2_LINUX_Processes/producer
-2_LINUX_Processes/consumer
-2_LINUX_Processes/main
