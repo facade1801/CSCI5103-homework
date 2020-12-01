@@ -273,7 +273,7 @@ int scull_b_init_module(void)
 	// 1. Alloc memory according to major/minor number: Almost copied from SCULLPIPE
 	if (scull_major) {
 		dev = MKDEV(scull_major, scull_minor);
-		result = register_chrdev_region(dev, scull_minor, "scullbuffer");
+		result = register_chrdev_region(dev, 1, "scullbuffer");
 	} else {
 		result = alloc_chrdev_region(&dev, scull_minor, 1, "scullbuffer");
 		scull_major = MAJOR(dev);
@@ -282,6 +282,7 @@ int scull_b_init_module(void)
 		printk(KERN_WARNING "SCULLPIPE: cannot get major (major = %d)\n", scull_major);
 		return result;
 	}
+	printk("Scull buffer init: result = %d\n", result);
 
 	// 2. Alloc THE device
 	scull_b_devices = kmalloc(1 * sizeof(struct scull_buffer), GFP_KERNEL);

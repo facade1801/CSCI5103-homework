@@ -6,6 +6,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+// added this to debug
+#include <errno.h>
+
 #include "scullbuffer.h"
 
 #define DEBUG 1
@@ -30,7 +33,7 @@ int main(int argc, char **argv)
 	//Open the scullbuffer device in write mode
 	fd_sb = open("/dev/scullbuffer", O_WRONLY);
 	if (fd_sb == -1) {
-		printf("Failed to open the scullbuffer device\n");
+		printf("Failed to open the scullbuffer device, errno = %d\n", errno);
 		return 0;
 	}
 
