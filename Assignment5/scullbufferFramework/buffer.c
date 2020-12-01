@@ -41,7 +41,7 @@ struct scull_buffer {
 		char *buffer, *end;                /* begin of buf, end of buf */
 		int buffersize;                    /* used in pointer arithmetic */
 		char *rp, *wp;                     /* where to read, where to write */
-		int  itemcount;			   		   /* Number of items in the buffer */
+		int  itemcount;			   		   /* NEW: Number of items in the buffer */
 		int nreaders, nwriters;            /* number of openings for r/w */
 		struct semaphore sem;              /* mutual exclusion semaphore */
 		struct cdev cdev;                  /* Char device structure */
@@ -75,20 +75,61 @@ MODULE_LICENSE("Dual BSD/GPL");
  */
 static int scull_b_open(struct inode *inode, struct file *filp)
 {
+	// initialize scull buffer device, link the device, let other methods know
 	struct scull_buffer *dev;
-		
-	// IMPLEMENT THIS FUNCTION 
+	dev = container_of(inode->i_cdev, struct scull_buffer, cdev);
+	filp->private_data = dev; /* for other methods */
+
+	// Grab the lock, initialize the buffer space (kmalloc 32*20)
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+	if (!dev->buffer) {
+		dev->buffer = kmalloc(NITEMS * itemsize, GFP_KERNEL);
+		if (!dev->buffer) {
+			up(&dev->sem);
+			return -ENOMEM;
+		}
+	}
+
+	// initialize other stuff in dev.
+	// 1.buffersize(32*20)	2.end=start+size 	3.pointers=0
+	dev->buffersize = NITEMS * itemsize;
+	dev->end = dev->buffer + dev->buffersize;
+	dev->rp = dev->wp = dev->buffer;
+	// 3d. setup wait queue (new)
+	init_waitqueue_head(&(dev->inq));
+	init_waitqueue_head(&(dev->outq));
+
+	// Copied from pipe.c. A new reader(writer) begins holding the file.
+	/* use f_mode,not  f_flags: it's cleaner (fs/open.c tells why) */
+	if (filp->f_mode & FMODE_READ)
+		dev->nreaders++;
+	if (filp->f_mode & FMODE_WRITE)
+		dev->nwriters++;
+	up(&dev->sem);
 
 	return nonseekable_open(inode, filp);
 }
 
 static int scull_b_release(struct inode *inode, struct file *filp)
 {
-	struct scull_buffer *dev ;
+	struct scull_buffer *dev = filp->private_data;
 
-	// IMPLEMENT THIS FUNCTION 
-	//
-
+	// fully copied. Nothing needs to change. Hooray!
+	// take the sem, check if anybody out there, if no one, free the buffer.
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+	if (filp->f_mode & FMODE_READ)
+		dev->nreaders--;
+	if (filp->f_mode & FMODE_WRITE)
+		dev->nwriters--;	
+	if (dev->nreaders + dev->nwriters == 0) {
+		kfree(dev->buffer);
+		dev->buffer = NULL; /* the other fields are not checked on open */
+	}
+	// up
+	up(&dev->sem);
+	return 0;
 }
 
 /*
@@ -97,17 +138,80 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
 
-	struct scull_buffer *dev ;
+	struct scull_buffer *dev = filp->private_data;
 
-	// IMPLEMENT THIS FUNCTION
-	//
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
+	// Got the sem -> check if the buffer has item (rp != lp)
+	// if the buffer has 0 item
+	while (dev->rp == dev->wp) {
+		// if there are writers, release lock and wait; if no writers, return 0
+
+		up(&dev->sem);
+		if (dev->nwriters > 0) {
+			wait_event_interruptible(dev->inq, dev->rp != dev->wp);
+			// when the writer finish writing, this wait will be resumed...
+		} else {
+			return 0;
+		}
+
+		//acquire the lock before next loop
+		down_interruptible(&dev->sem);
+	}
+
+	// now the buffer must have >0 item, and THIS process is holding the sem
+	// do the read
+	*buf = *(dev->rp);
+	if (dev->rp == dev->end) {
+		dev->rp = dev->buffer;
+	} else {
+		dev->rp += 32;
+	}
+
+	// broadcast to all writers
+	wake_up_interruptible(&dev->outq);
+	up(&dev->sem);
+	return itemsize;
+
 } 
 static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
-	struct scull_buffer *dev; 
+	struct scull_buffer *dev = filp->private_data;
 
-	// IMPLEMENT THIS FUNCTION
-	//
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
+	// Got the sem -> check if the buffer has item (rp != lp)
+	// if the buffer has 0 item
+	while ((dev->wp - dev->rp) % dev->buffersize == 32) {
+		// if there are readers, release lock and wait; if no readers, return 0
+		up(&dev->sem);
+		if (dev->nreaders > 0) {
+			wait_event_interruptible(dev->outq, (dev->wp - dev->rp) % dev->buffersize != 32);
+			// when the reader finish reading, this wait will be resumed...
+		} else {
+			return 0;
+		}
+
+		//acquire the lock before next loop
+		down_interruptible(&dev->sem);
+	}
+
+	// now the buffer must have >0 item, and THIS process is holding the sem
+	// do the write!
+	// TODO: it's dangerous because write could cover the read.
+	*(dev->wp) = *buf;
+	if (dev->wp == dev->end) {
+		dev->wp = dev->buffer;
+	} else {
+		dev->wp += 32;
+	}
+
+	// broadcast to all readers
+	wake_up_interruptible(&dev->inq);
+	up(&dev->sem);
+	return itemsize;
 }
 
 /*
@@ -144,8 +248,17 @@ void scull_b_cleanup_module(void)
  */
 static void scull_b_setup_cdev(struct scull_buffer *dev, int index)
 {
-	// IMPLEMENT THIS FUNCTION
-	//
+	int err;
+	// set up char_dev: the variable is called (dev->cdev)
+	cdev_init(&dev->cdev, &scull_buffer_fops);
+	dev->cdev.owner = THIS_MODULE;
+	dev->cdev.ops = &scull_buffer_fops;
+	// the 0 means devno(basically nothing I think, doesn't matter here)
+	err = cdev_add(&dev->cdev, 0, 1);
+
+	/* Fail gracefully if need be */
+	if (err)
+		printk(KERN_NOTICE "Error %d adding scull buffer %d", err, index);
 }
 
 
@@ -179,9 +292,13 @@ int scull_b_init_module(void)
 	memset(scull_b_devices, 0, 1 * sizeof(struct scull_buffer));
 
 	// 3. Initialize THE device. The number is 0, because it's the only device
-	scull_b_devices[0].buffersize = NITEMS;
+	// 3a. Buffer size (initialized somewhere else?)
+	// scull_b_devices[0].buffersize = NITEMS;
+	// 3b. Mutex
 	init_MUTEX(&scull_b_devices[0].sem);
+	// 3c. setup cdev
 	scull_b_setup_cdev(&scull_b_devices[0], 0);
+
 
 	// should be everything for now!
 	return 0;

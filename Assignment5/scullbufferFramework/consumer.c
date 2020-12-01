@@ -59,7 +59,8 @@ int main(int argc, char **argv) {
 
 		//Read an item from scullbuffer into consumer buffer and log the result
 		memset(buffer, '\0', item_size);
-		res = read(fd_sb, buffer, item_size);
+		sleep(1);
+		res = read(fd_sb, buffer, item_size);	// <<<< The READ <<<<
 		if (res == item_size) {
 			snprintf(item, strlen(buffer) + 1, "%s", buffer);
 			// sprintf(item, "%s\n", item);

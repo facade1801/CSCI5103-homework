@@ -60,6 +60,7 @@ int main(int argc, char **argv)
 		#endif
 
 		//Write to scullbuffer and Log the result
+		sleep(1);
 		res = write(fd_sb, buffer, item_size);	// <<<< The WRITE <<<<
 		if (res == item_size) {
 			snprintf(item, strlen(buffer) + 1, "%s", buffer);
