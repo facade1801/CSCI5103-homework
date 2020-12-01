@@ -36,6 +36,7 @@
 #include "scullbuffer.h"	/* local definitions */
 
 
+
 struct scull_buffer {
 		wait_queue_head_t inq, outq;       /* read and write queues */
 		char *buffer, *end;                /* begin of buf, end of buf */
@@ -96,16 +97,21 @@ static int scull_b_open(struct inode *inode, struct file *filp)
 	dev->buffersize = NITEMS * itemsize;
 	dev->end = dev->buffer + dev->buffersize;
 	dev->rp = dev->wp = dev->buffer;
+	printk("buffer=%d, end=%d, buffersize=%d", (int)(dev->buffer), (int)(dev->end), dev->buffersize);
 	// 3d. setup wait queue (new)
 	init_waitqueue_head(&(dev->inq));
 	init_waitqueue_head(&(dev->outq));
 
 	// Copied from pipe.c. A new reader(writer) begins holding the file.
 	/* use f_mode,not  f_flags: it's cleaner (fs/open.c tells why) */
-	if (filp->f_mode & FMODE_READ)
+	if (filp->f_mode & FMODE_READ) {
+		printk("A new reader is coming\n");
 		dev->nreaders++;
-	if (filp->f_mode & FMODE_WRITE)
+	}
+	if (filp->f_mode & FMODE_WRITE) {
+		printk("A new writer is coming\n");
 		dev->nwriters++;
+	}
 	up(&dev->sem);
 
 	return nonseekable_open(inode, filp);
@@ -119,10 +125,14 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 	// take the sem, check if anybody out there, if no one, free the buffer.
 	if (down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
-	if (filp->f_mode & FMODE_READ)
+	if (filp->f_mode & FMODE_READ) {
+		printk("A reader is leaving\n");
 		dev->nreaders--;
-	if (filp->f_mode & FMODE_WRITE)
+	}
+	if (filp->f_mode & FMODE_WRITE) {
+		printk("A writer is leaving\n");
 		dev->nwriters--;	
+	}
 	if (dev->nreaders + dev->nwriters == 0) {
 		kfree(dev->buffer);
 		dev->buffer = NULL; /* the other fields are not checked on open */
@@ -153,6 +163,7 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 			wait_event_interruptible(dev->inq, dev->rp != dev->wp);
 			// when the writer finish writing, this wait will be resumed...
 		} else {
+			printk("buffer empty & no producer\n");
 			return 0;
 		}
 
@@ -162,7 +173,7 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 
 	// now the buffer must have >0 item, and THIS process is holding the sem
 	// do the read
-	*buf = *(dev->rp);
+	strcpy(buf, dev->rp);
 	if (dev->rp == dev->end) {
 		dev->rp = dev->buffer;
 	} else {
@@ -183,14 +194,15 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 		return -ERESTARTSYS;
 
 	// Got the sem -> check if the buffer has item (rp != lp)
-	// if the buffer has 0 item
-	while ((dev->wp - dev->rp) % dev->buffersize == 32) {
+	// if the buffer is full
+	while ((dev->rp - dev->wp) % dev->buffersize == 32) {
 		// if there are readers, release lock and wait; if no readers, return 0
 		up(&dev->sem);
 		if (dev->nreaders > 0) {
 			wait_event_interruptible(dev->outq, (dev->wp - dev->rp) % dev->buffersize != 32);
 			// when the reader finish reading, this wait will be resumed...
 		} else {
+			printk("buffer full & no consumer\n");
 			return 0;
 		}
 
@@ -201,12 +213,14 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 	// now the buffer must have >0 item, and THIS process is holding the sem
 	// do the write!
 	// TODO: it's dangerous because write could cover the read.
-	*(dev->wp) = *buf;
+	strcpy(dev->wp, buf);
+	printk("the written string is <%s>", dev->wp);
 	if (dev->wp == dev->end) {
 		dev->wp = dev->buffer;
 	} else {
 		dev->wp += 32;
 	}
+	printk("pointer becomes <%i>", (int)(dev->wp));
 
 	// broadcast to all readers
 	wake_up_interruptible(&dev->inq);
@@ -249,12 +263,13 @@ void scull_b_cleanup_module(void)
 static void scull_b_setup_cdev(struct scull_buffer *dev, int index)
 {
 	int err;
+	int devno = MKDEV(scull_major, 0);
 	// set up char_dev: the variable is called (dev->cdev)
 	cdev_init(&dev->cdev, &scull_buffer_fops);
 	dev->cdev.owner = THIS_MODULE;
 	dev->cdev.ops = &scull_buffer_fops;
 	// the 0 means devno(basically nothing I think, doesn't matter here)
-	err = cdev_add(&dev->cdev, 0, 1);
+	err = cdev_add(&dev->cdev, devno, 1);
 
 	/* Fail gracefully if need be */
 	if (err)
@@ -271,10 +286,13 @@ int scull_b_init_module(void)
 	dev_t dev = 0;
 
 	// 1. Alloc memory according to major/minor number: Almost copied from SCULLPIPE
+	int choice;
 	if (scull_major) {
+		choice = 1;
 		dev = MKDEV(scull_major, scull_minor);
 		result = register_chrdev_region(dev, 1, "scullbuffer");
 	} else {
+		choice = 2;
 		result = alloc_chrdev_region(&dev, scull_minor, 1, "scullbuffer");
 		scull_major = MAJOR(dev);
 	}
@@ -282,7 +300,7 @@ int scull_b_init_module(void)
 		printk(KERN_WARNING "SCULLPIPE: cannot get major (major = %d)\n", scull_major);
 		return result;
 	}
-	printk("Scull buffer init: result = %d\n", result);
+	printk("Scull buffer init: result = %d, scullMajor = %d, choice = %d\n", result, scull_major, choice);
 
 	// 2. Alloc THE device
 	scull_b_devices = kmalloc(1 * sizeof(struct scull_buffer), GFP_KERNEL);
