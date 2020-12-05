@@ -137,6 +137,15 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 		printk("A writer is leaving\n");
 		dev->nwriters--;	
 	}
+
+	// if (dev->nreaders == 0) {
+	// 	wake_up_interruptible(&dev->outq);
+	// }
+	// // last writer leaving, send a notice to all readers.
+	// if (dev->nwriters == 0) {
+	// 	wake_up_interruptible(&dev->inq);
+	// }
+
 	if (dev->nreaders + dev->nwriters == 0) {
 		kfree(dev->buffer);
 		dev->buffer = NULL; /* the other fields are not checked on open */
@@ -145,6 +154,7 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 	}
 	// up
 	up(&dev->sem);
+
 	return 0;
 }
 
@@ -166,7 +176,7 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 
 		up(&dev->sem);
 		if (dev->nwriters > 0) {
-			wait_event_interruptible(dev->inq, dev->itemcount != 0);
+			wait_event_interruptible(dev->inq, dev->itemcount != 0 || dev->nwriters == 0);
 			// when the writer finish writing, this wait will be resumed...
 		} else {
 			printk("buffer empty & no producer\n");
@@ -177,10 +187,9 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 		down_interruptible(&dev->sem);
 	}
 
-	// now the buffer must have >0 item, and THIS process is holding the sem
-	// do the read
-	strcpy(buf, dev->rp);
-
+	// Now do the read. now the buffer must have >0 item, and THIS process is holding the sem
+	// strcpy(buf, dev->rp);
+	copy_to_user(buf, dev->rp, itemsize);
 	dev->rp += itemsize;
 	dev->itemcount --;
 	if (dev->rp == dev->end) {
@@ -207,7 +216,7 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 		// if there are readers, release lock and wait; if no readers, return 0
 		up(&dev->sem);
 		if (dev->nreaders > 0) {
-			wait_event_interruptible(dev->outq, dev->itemcount != 20);
+			wait_event_interruptible(dev->outq, dev->itemcount != 20 || dev->nreaders == 0);
 			// when the reader finish reading, this wait will be resumed...
 		} else {
 			printk("buffer full & no consumer\n");
