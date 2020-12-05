@@ -138,13 +138,13 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 		dev->nwriters--;	
 	}
 
-	// if (dev->nreaders == 0) {
-	// 	wake_up_interruptible(&dev->outq);
-	// }
-	// // last writer leaving, send a notice to all readers.
-	// if (dev->nwriters == 0) {
-	// 	wake_up_interruptible(&dev->inq);
-	// }
+	if (dev->nreaders == 0) {
+		wake_up_interruptible(&dev->outq);
+	}
+	// last writer leaving, send a notice to all readers.
+	if (dev->nwriters == 0) {
+		wake_up_interruptible(&dev->inq);
+	}
 
 	if (dev->nreaders + dev->nwriters == 0) {
 		kfree(dev->buffer);
