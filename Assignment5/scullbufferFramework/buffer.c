@@ -212,11 +212,11 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 	// Got the sem -> check if the buffer has item (rp != lp)
 	// if the buffer is full	
 	// while ((dev->rp - dev->wp + dev->buffersize) % dev->buffersize == 32) {
-	while ((dev->itemcount == 20)) {
+	while ((dev->itemcount == NITEMS)) {
 		// if there are readers, release lock and wait; if no readers, return 0
 		up(&dev->sem);
 		if (dev->nreaders > 0) {
-			wait_event_interruptible(dev->outq, dev->itemcount != 20 || dev->nreaders == 0);
+			wait_event_interruptible(dev->outq, dev->itemcount != NITEMS || dev->nreaders == 0);
 			// when the reader finish reading, this wait will be resumed...
 		} else {
 			printk("buffer full & no consumer\n");
@@ -230,7 +230,8 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 	// now the buffer must have space(does it?), and THIS process is holding the sem
 	// do the write!
 	// TODO: it's dangerous because write could cover the read. (Probably solved)
-	strcpy(dev->wp, buf);
+	// strcpy(dev->wp, buf);
+	copy_from_user(dev->wp, buf, itemsize);
 	printk("the written string is <%s>\n", dev->wp);
 
 	dev->wp += itemsize;
