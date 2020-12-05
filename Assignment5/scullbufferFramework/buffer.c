@@ -85,22 +85,26 @@ static int scull_b_open(struct inode *inode, struct file *filp)
 	if (down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
 	if (!dev->buffer) {
+		printk("I'm initializing the buffer because there's no buffer here - this message should only be here 1 time.");
 		dev->buffer = kmalloc(NITEMS * itemsize, GFP_KERNEL);
 		if (!dev->buffer) {
 			up(&dev->sem);
 			return -ENOMEM;
 		}
+
+		// initialize other stuff in dev.
+		// 1.buffersize(32*20)	2.end=start+size 	3.pointers=0
+		dev->buffersize = NITEMS * itemsize;
+		dev->end = dev->buffer + dev->buffersize;
+		dev->rp = dev->wp = dev->buffer;		
+		// 3d. setup wait queue (new)
+		init_waitqueue_head(&(dev->inq));
+		init_waitqueue_head(&(dev->outq));
 	}
 
-	// initialize other stuff in dev.
-	// 1.buffersize(32*20)	2.end=start+size 	3.pointers=0
-	dev->buffersize = NITEMS * itemsize;
-	dev->end = dev->buffer + dev->buffersize;
-	dev->rp = dev->wp = dev->buffer;
-	printk("buffer=%d, end=%d, buffersize=%d", (int)(dev->buffer), (int)(dev->end), dev->buffersize);
-	// 3d. setup wait queue (new)
-	init_waitqueue_head(&(dev->inq));
-	init_waitqueue_head(&(dev->outq));
+	// dev->rp = dev->wp = dev->buffer;
+	printk("A new person has come. buffer=%d, end=%d, buffersize=%d", (int)(dev->buffer), (int)(dev->end), dev->buffersize);
+
 
 	// Copied from pipe.c. A new reader(writer) begins holding the file.
 	/* use f_mode,not  f_flags: it's cleaner (fs/open.c tells why) */
@@ -136,6 +140,8 @@ static int scull_b_release(struct inode *inode, struct file *filp)
 	if (dev->nreaders + dev->nwriters == 0) {
 		kfree(dev->buffer);
 		dev->buffer = NULL; /* the other fields are not checked on open */
+		dev->itemcount = 0;
+		dev->rp = dev->wp = NULL;
 	}
 	// up
 	up(&dev->sem);
@@ -155,12 +161,12 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 
 	// Got the sem -> check if the buffer has item (rp != lp)
 	// if the buffer has 0 item
-	while (dev->rp == dev->wp) {
+	while (dev->itemcount == 0) {
 		// if there are writers, release lock and wait; if no writers, return 0
 
 		up(&dev->sem);
 		if (dev->nwriters > 0) {
-			wait_event_interruptible(dev->inq, dev->rp != dev->wp);
+			wait_event_interruptible(dev->inq, dev->itemcount != 0);
 			// when the writer finish writing, this wait will be resumed...
 		} else {
 			printk("buffer empty & no producer\n");
@@ -174,15 +180,15 @@ static ssize_t scull_b_read(struct file *filp, char __user *buf, size_t count, l
 	// now the buffer must have >0 item, and THIS process is holding the sem
 	// do the read
 	strcpy(buf, dev->rp);
+
+	dev->rp += itemsize;
+	dev->itemcount --;
 	if (dev->rp == dev->end) {
 		dev->rp = dev->buffer;
-	} else {
-		dev->rp += 32;
 	}
-
 	// broadcast to all writers
-	wake_up_interruptible(&dev->outq);
 	up(&dev->sem);
+	wake_up_interruptible(&dev->outq);
 	return itemsize;
 
 } 
@@ -193,13 +199,15 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 	if (down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
 
+	printk("mod value = %li, dev->itemcount = %i\n", ((dev->rp - dev->wp + dev->buffersize) % dev->buffersize), dev->itemcount);
 	// Got the sem -> check if the buffer has item (rp != lp)
-	// if the buffer is full
-	while ((dev->rp - dev->wp) % dev->buffersize == 32) {
+	// if the buffer is full	
+	// while ((dev->rp - dev->wp + dev->buffersize) % dev->buffersize == 32) {
+	while ((dev->itemcount == 20)) {
 		// if there are readers, release lock and wait; if no readers, return 0
 		up(&dev->sem);
 		if (dev->nreaders > 0) {
-			wait_event_interruptible(dev->outq, (dev->wp - dev->rp) % dev->buffersize != 32);
+			wait_event_interruptible(dev->outq, dev->itemcount != 20);
 			// when the reader finish reading, this wait will be resumed...
 		} else {
 			printk("buffer full & no consumer\n");
@@ -210,21 +218,23 @@ static ssize_t scull_b_write(struct file *filp, const char __user *buf, size_t c
 		down_interruptible(&dev->sem);
 	}
 
-	// now the buffer must have >0 item, and THIS process is holding the sem
+	// now the buffer must have space(does it?), and THIS process is holding the sem
 	// do the write!
-	// TODO: it's dangerous because write could cover the read.
+	// TODO: it's dangerous because write could cover the read. (Probably solved)
 	strcpy(dev->wp, buf);
-	printk("the written string is <%s>", dev->wp);
+	printk("the written string is <%s>\n", dev->wp);
+
+	dev->wp += itemsize;
+	dev->itemcount ++;
 	if (dev->wp == dev->end) {
 		dev->wp = dev->buffer;
-	} else {
-		dev->wp += 32;
 	}
-	printk("pointer becomes <%i>", (int)(dev->wp));
+
+	printk("pointer becomes <%i>\n", (int)(dev->wp));
 
 	// broadcast to all readers
-	wake_up_interruptible(&dev->inq);
 	up(&dev->sem);
+	wake_up_interruptible(&dev->inq);
 	return itemsize;
 }
 
@@ -311,8 +321,8 @@ int scull_b_init_module(void)
 	memset(scull_b_devices, 0, 1 * sizeof(struct scull_buffer));
 
 	// 3. Initialize THE device. The number is 0, because it's the only device
-	// 3a. Buffer size (initialized somewhere else?)
-	// scull_b_devices[0].buffersize = NITEMS;
+	// 3a. itemcount
+	scull_b_devices[0].itemcount = 0;
 	// 3b. Mutex
 	init_MUTEX(&scull_b_devices[0].sem);
 	// 3c. setup cdev
